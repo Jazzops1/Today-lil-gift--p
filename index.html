@@ -54,12 +54,10 @@
     max-width: 320px;
     word-wrap: break-word;
   }
-
-  /* Responsive scaling */
   @media (max-width: 400px) {
     #puzzle-container {
-      width: 90vw; /* use viewport width */
-      height: calc(90vw * 1.5); /* keep 4:6 ratio */
+      width: 90vw;
+      height: calc(90vw * 1.5);
       grid-template-columns: repeat(4, 1fr);
       grid-template-rows: repeat(6, 1fr);
     }
@@ -73,116 +71,160 @@
       padding: 15px;
     }
   }
+  /* Password screen styles */
+  #password-screen {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100vh;
+    background: #fff8e1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
+  #password-screen input {
+    padding: 10px;
+    font-size: 1.2em;
+    border: 2px solid #f8b500;
+    border-radius: 8px;
+    margin-top: 10px;
+  }
+  #password-screen button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    background: #f8b500;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    cursor: pointer;
+  }
+  #password-error {
+    color: red;
+    margin-top: 10px;
+    display: none;
+  }
 </style>
 </head>
 <body>
-<h1>A LIL PUZZLEE HEHEHEHEHE</h1>
-<div id="puzzle-container"></div>
+
+<!-- Password screen -->
+<div id="password-screen">
+  <h2>🔒 Enter the password</h2>
+  <input type="password" id="password-input" placeholder="Password">
+  <button onclick="checkPassword()">Enter</button>
+  <p id="password-error">Incorrect password. Try again.</p>
+</div>
+
+<h1 style="display:none;">A LIL PUZZLEE HEHEHEHEHE</h1>
+<div id="puzzle-container" style="display:none;"></div>
 <div id="message">🎉 You did it! HEHE SO A LIL TEASER OF WHAT I WAS DOING WORK IN PROGRESSS BUTT HEHEH OK BYE </div>
 
 <script>
-  // Password protection (same as before)
   const PASSWORD = 'TODAY*';
-  const entered = prompt('Please enter the password to access the puzzle:');
-  if (entered !== PASSWORD) {
-    document.body.innerHTML = '<h2 style="text-align:center;margin-top:50px;">Access Denied. Incorrect password.</h2>';
-    throw new Error('Access denied');
-  }
 
-  const container = document.getElementById('puzzle-container');
-  const message = document.getElementById('message');
-  const cols = 4;
-  const rows = 6;
-  const totalPieces = cols * rows;
-
-  const positions = Array.from({ length: totalPieces }, (_, i) => i);
-
-  shuffle(positions);
-
-  positions.forEach(i => {
-    const piece = document.createElement('div');
-    piece.className = 'piece';
-    piece.style.backgroundPosition = `-${(i % cols) * 80}px -${Math.floor(i / cols) * 80}px`;
-    piece.dataset.correct = i;
-    container.appendChild(piece);
-  });
-
-  // Variables for swapping pieces on mobile (tap-to-swap)
-  let selectedPiece = null;
-
-  // Detect if device supports touch
-  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-
-  if (isTouchDevice) {
-    // On touch devices, use tap-to-swap instead of drag-and-drop
-    container.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('piece')) return;
-
-      if (!selectedPiece) {
-        selectedPiece = e.target;
-        selectedPiece.style.outline = '3px solid #f8b500';
-      } else if (selectedPiece === e.target) {
-        // Deselect if clicking same piece
-        selectedPiece.style.outline = '';
-        selectedPiece = null;
-      } else {
-        // Swap background positions and dataset.correct
-        swapPieces(selectedPiece, e.target);
-        selectedPiece.style.outline = '';
-        selectedPiece = null;
-        checkSolved();
-      }
-    });
-  } else {
-    // Desktop drag and drop logic
-    let dragged = null;
-
-    container.addEventListener('dragstart', e => {
-      if (e.target.classList.contains('piece')) {
-        dragged = e.target;
-      }
-    });
-
-    container.addEventListener('dragover', e => {
-      e.preventDefault();
-    });
-
-    container.addEventListener('drop', e => {
-      if (e.target.classList.contains('piece') && dragged !== e.target) {
-        swapPieces(dragged, e.target);
-        checkSolved();
-      }
-    });
-  }
-
-  function swapPieces(piece1, piece2) {
-    const fromBg = piece1.style.backgroundPosition;
-    const toBg = piece2.style.backgroundPosition;
-
-    const fromCorrect = piece1.dataset.correct;
-    const toCorrect = piece2.dataset.correct;
-
-    piece1.style.backgroundPosition = toBg;
-    piece2.style.backgroundPosition = fromBg;
-
-    piece1.dataset.correct = toCorrect;
-    piece2.dataset.correct = fromCorrect;
-  }
-
-  function checkSolved() {
-    const pieces = Array.from(container.children);
-    const correct = pieces.every((el, idx) => parseInt(el.dataset.correct, 10) === idx);
-    if (correct) {
-      message.style.display = 'block';
+  function checkPassword() {
+    const input = document.getElementById('password-input').value;
+    const error = document.getElementById('password-error');
+    if (input === PASSWORD) {
+      document.getElementById('password-screen').style.display = 'none';
+      document.querySelector('h1').style.display = 'block';
+      document.getElementById('puzzle-container').style.display = 'grid';
+      initPuzzle();
     } else {
-      message.style.display = 'none';
+      error.style.display = 'block';
     }
   }
 
-  function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
+  function initPuzzle() {
+    const container = document.getElementById('puzzle-container');
+    const message = document.getElementById('message');
+    const cols = 4;
+    const rows = 6;
+    const totalPieces = cols * rows;
+
+    const positions = Array.from({ length: totalPieces }, (_, i) => i);
+    shuffle(positions);
+
+    positions.forEach(i => {
+      const piece = document.createElement('div');
+      piece.className = 'piece';
+      piece.style.backgroundPosition = `-${(i % cols) * 80}px -${Math.floor(i / cols) * 80}px`;
+      piece.dataset.correct = i;
+      container.appendChild(piece);
+    });
+
+    let selectedPiece = null;
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    if (isTouchDevice) {
+      container.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('piece')) return;
+
+        if (!selectedPiece) {
+          selectedPiece = e.target;
+          selectedPiece.style.outline = '3px solid #f8b500';
+        } else if (selectedPiece === e.target) {
+          selectedPiece.style.outline = '';
+          selectedPiece = null;
+        } else {
+          swapPieces(selectedPiece, e.target);
+          selectedPiece.style.outline = '';
+          selectedPiece = null;
+          checkSolved();
+        }
+      });
+    } else {
+      let dragged = null;
+
+      container.addEventListener('dragstart', e => {
+        if (e.target.classList.contains('piece')) {
+          dragged = e.target;
+        }
+      });
+
+      container.addEventListener('dragover', e => {
+        e.preventDefault();
+      });
+
+      container.addEventListener('drop', e => {
+        if (e.target.classList.contains('piece') && dragged !== e.target) {
+          swapPieces(dragged, e.target);
+          checkSolved();
+        }
+      });
+    }
+
+    function swapPieces(piece1, piece2) {
+      const fromBg = piece1.style.backgroundPosition;
+      const toBg = piece2.style.backgroundPosition;
+
+      const fromCorrect = piece1.dataset.correct;
+      const toCorrect = piece2.dataset.correct;
+
+      piece1.style.backgroundPosition = toBg;
+      piece2.style.backgroundPosition = fromBg;
+
+      piece1.dataset.correct = toCorrect;
+      piece2.dataset.correct = fromCorrect;
+    }
+
+    function checkSolved() {
+      const pieces = Array.from(container.children);
+      const correct = pieces.every((el, idx) => parseInt(el.dataset.correct, 10) === idx);
+      if (correct) {
+        message.style.display = 'block';
+      } else {
+        message.style.display = 'none';
+      }
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
     }
   }
 </script>

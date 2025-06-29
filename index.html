@@ -11,17 +11,19 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
     background: linear-gradient(135deg, #fceabb, #f8b500);
   }
   h1 {
     margin-bottom: 20px;
     color: #333;
+    text-align: center;
+    padding: 0 10px;
   }
   #puzzle-container {
-    width: 320px; /* 4 cols * 80px */
-    height: 480px; /* 6 rows * 80px */
+    width: 320px;
+    height: 480px;
     display: grid;
     grid-template-columns: repeat(4, 80px);
     grid-template-rows: repeat(6, 80px);
@@ -29,14 +31,15 @@
     border: 2px solid #fff;
     box-shadow: 0 4px 20px rgba(0,0,0,0.2);
     user-select: none;
+    touch-action: manipulation;
   }
   .piece {
     width: 80px;
     height: 80px;
     background-image: url("images/Snapchat-691404429.jpg");
-    background-size: 320px 480px; /* exact full image size */
+    background-size: 320px 480px;
     border: 1px solid #fff;
-    cursor: move;
+    cursor: grab;
     box-sizing: border-box;
   }
   #message {
@@ -49,24 +52,42 @@
     box-shadow: 0 4px 20px rgba(0,0,0,0.2);
     text-align: center;
     max-width: 320px;
+    word-wrap: break-word;
+  }
+
+  /* Responsive scaling */
+  @media (max-width: 400px) {
+    #puzzle-container {
+      width: 90vw; /* use viewport width */
+      height: calc(90vw * 1.5); /* keep 4:6 ratio */
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(6, 1fr);
+    }
+    .piece {
+      width: 100%;
+      height: 100%;
+    }
+    #message {
+      max-width: 90vw;
+      font-size: 1em;
+      padding: 15px;
+    }
   }
 </style>
 </head>
 <body>
-<h1>A LITTLE PUZZLE HEHEHE 🧩</h1>
+<h1>The Puzzle of Us 🧩</h1>
 <div id="puzzle-container"></div>
-<div id="message">🎉 You did it! this isss a work in progress and im sorry for showing u but UGH IM HAPPY I GOT THIS FAR HEH ok bye  😭  </div>
+<div id="message">🎉 You did it! Just like this puzzle, our friendship fits perfectly. 💖</div>
 
 <script>
-  // ===== PASSWORD PROTECTION START =====
-  const PASSWORD = 'Today**'; // <-- set your password here
-
+  // Password protection (same as before)
+  const PASSWORD = 'friendship123';
   const entered = prompt('Please enter the password to access the puzzle:');
   if (entered !== PASSWORD) {
     document.body.innerHTML = '<h2 style="text-align:center;margin-top:50px;">Access Denied. Incorrect password.</h2>';
-    throw new Error('Access denied'); // stop further script execution
+    throw new Error('Access denied');
   }
-  // ===== PASSWORD PROTECTION END =====
 
   const container = document.getElementById('puzzle-container');
   const message = document.getElementById('message');
@@ -82,40 +103,71 @@
     const piece = document.createElement('div');
     piece.className = 'piece';
     piece.style.backgroundPosition = `-${(i % cols) * 80}px -${Math.floor(i / cols) * 80}px`;
-    piece.setAttribute('draggable', 'true');
     piece.dataset.correct = i;
     container.appendChild(piece);
   });
 
-  let dragged = null;
+  // Variables for swapping pieces on mobile (tap-to-swap)
+  let selectedPiece = null;
 
-  container.addEventListener('dragstart', e => {
-    if (e.target.classList.contains('piece')) {
-      dragged = e.target;
-    }
-  });
+  // Detect if device supports touch
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-  container.addEventListener('dragover', e => {
-    e.preventDefault();
-  });
+  if (isTouchDevice) {
+    // On touch devices, use tap-to-swap instead of drag-and-drop
+    container.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('piece')) return;
 
-  container.addEventListener('drop', e => {
-    if (e.target.classList.contains('piece') && dragged !== e.target) {
-      const fromBg = dragged.style.backgroundPosition;
-      const toBg = e.target.style.backgroundPosition;
+      if (!selectedPiece) {
+        selectedPiece = e.target;
+        selectedPiece.style.outline = '3px solid #f8b500';
+      } else if (selectedPiece === e.target) {
+        // Deselect if clicking same piece
+        selectedPiece.style.outline = '';
+        selectedPiece = null;
+      } else {
+        // Swap background positions and dataset.correct
+        swapPieces(selectedPiece, e.target);
+        selectedPiece.style.outline = '';
+        selectedPiece = null;
+        checkSolved();
+      }
+    });
+  } else {
+    // Desktop drag and drop logic
+    let dragged = null;
 
-      const fromCorrect = dragged.dataset.correct;
-      const toCorrect = e.target.dataset.correct;
+    container.addEventListener('dragstart', e => {
+      if (e.target.classList.contains('piece')) {
+        dragged = e.target;
+      }
+    });
 
-      dragged.style.backgroundPosition = toBg;
-      e.target.style.backgroundPosition = fromBg;
+    container.addEventListener('dragover', e => {
+      e.preventDefault();
+    });
 
-      dragged.dataset.correct = toCorrect;
-      e.target.dataset.correct = fromCorrect;
+    container.addEventListener('drop', e => {
+      if (e.target.classList.contains('piece') && dragged !== e.target) {
+        swapPieces(dragged, e.target);
+        checkSolved();
+      }
+    });
+  }
 
-      checkSolved();
-    }
-  });
+  function swapPieces(piece1, piece2) {
+    const fromBg = piece1.style.backgroundPosition;
+    const toBg = piece2.style.backgroundPosition;
+
+    const fromCorrect = piece1.dataset.correct;
+    const toCorrect = piece2.dataset.correct;
+
+    piece1.style.backgroundPosition = toBg;
+    piece2.style.backgroundPosition = fromBg;
+
+    piece1.dataset.correct = toCorrect;
+    piece2.dataset.correct = fromCorrect;
+  }
 
   function checkSolved() {
     const pieces = Array.from(container.children);

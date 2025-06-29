@@ -6,7 +6,11 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Hello</h1>
-    <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Vel nam, corrupti pariatur sint modi, quod ea in at non, minus quo magni nobis soluta ipsam nihil rem perspiciatis alias facere!</p>
+    <script>
+  const password = prompt("Enter the secret password:");
+  if (password !== "yourSecret123") {
+    document.body.innerHTML = "<h1>🚫 Access Denied</h1><p>Wrong password.</p>";
+  }
+</script>
 </body>
 </html>
